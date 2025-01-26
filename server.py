@@ -1,9 +1,10 @@
 import socket
 from main import httpResponse
+import json
 
 PORT = 27015
 IP = "0.0.0.0"
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, )
 server.bind((IP, PORT))
 
 server.listen(5)
@@ -26,27 +27,47 @@ while True:
     
     headers = {}
     for line in data.splitlines()[1:]:
+        if line =="":
+            break    
+        
         if line and ": " in line:
             key,value = line.split(": ", 1)
             headers[key] = value
     
-    print("PATH:", path)
     
     body=""
+    bodyData = data.splitlines()[-1]
     contentType = headers.get("Content-Type")
+    
     if contentType == "application/x-www-form-urlencoded":
         body={}
-        lines = data.splitlines()[-1].split("&")
+        lines = bodyData.split("&")
         for line in lines:
             key, value = line.split("=")
             body[key] = value
-    
-    if isinstance(body, dict):
-        body = "&".join([f"{key}={value}" for key, value in body.items()])
+            
+    if contentType == "application/json":
+        print(bodyData)
+        try: 
+            body = json.loads(bodyData)
+        except json.JSONDecodeError:
+            body = {"error": "Invalid JSON"}
+            
+             
         
-    print(httpResponse(method, body, headers))
+    if isinstance(body, dict):
+        if contentType == "application/x-www-form-urlencoded":
+            body = "&".join([f"{key}={value}" for key, value in body.items()])
+        elif contentType == "application/json":
+            body = json.dumps(body)
+        
+    status_code = "200"
+    status_message = "OK"        
     
-    client.sendall(httpResponse(200, "Hello World", headers).encode())
+    response = httpResponse(status_code, status_message, body, headers)
+    print(response)
+    print(response.encode())
+    client.sendall(response.encode())
     
     client.close()
     
