@@ -5,9 +5,11 @@ import json
 PORT = 27015
 IP = "0.0.0.0"
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, )
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  
 server.bind((IP, PORT))
 
 server.listen(5)
+print(f"Listening on {IP}:{PORT}")
 
 while True:
     client,addr = server.accept()
